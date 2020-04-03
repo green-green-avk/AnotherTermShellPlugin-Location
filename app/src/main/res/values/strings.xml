@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">Another Term Shell Plugin - Location</string>
+    <string name="msg_bad_argument_s">Bad argument: %s</string>
+    <string name="msg_location_perm_not_granted">Location access permission is not granted.
+    It can be granted in the device settings.</string>
+    <string name="msg_usage"><![CDATA[
+        Usage: [-b] [-r] [-t [<minIntervalSeconds> [<minDistanceMeters>]]]
+    ]]></string>
+    <string name="desc_plugin"><![CDATA[
+        <p>Returns last know location or tracks it.</p>
+        <p>Output format: <code>&lt;timestamp&gt;
+        &lt;latitude_deg&gt;,&lt;longitude_deg&gt; &lt;accuracy_m&gt;
+        &lt;altitude_m&gt; &lt;accuracy_m&gt; &lt;bearing_deg&gt; &lt;accuracy_deg&gt;
+        &lt;speed_mps&gt; &lt;accuracy_mps&gt; &lt;provider&gt;</code></p>
+        <p>Arguments:</p>
+        <ul type=\"none\">
+        <li><code>-b</code> &#x2014; use binary format instead as <p><code>
+        struct {<br/>
+        uint32_t len; // size of this structure minus 4<br/>
+        sint64_t time_stamp; // seconds since the beginning of the epoch<br/>
+        double latitude; // degrees<br/>
+        double longitude; // degrees<br/>
+        float accuracy; // meters<br/>
+        double altitude; // meters<br/>
+        float altitude_accuracy; // meters<br/>
+        float bearing; // degrees<br/>
+        float bearing_accuracy; // degrees<br/>
+        float speed; // meters per second<br/>
+        float speed_accuracy; // meters per second<br/>
+        char[4] provider;<br/>
+        };<br/>
+        </code></p></li>
+        <li><code>-r</code> &#x2014; fancy output.</li>
+        <li><code>-t [&lt;minIntervalSeconds&gt; [&lt;minDistanceMeters&gt;]]</code> &#x2014;
+        output position updates continuously and exit on any signal.</li>
+        </ul>
+    ]]></string>
+</resources>
