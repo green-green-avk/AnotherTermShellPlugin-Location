@@ -8,31 +8,35 @@
     ]]></string>
     <string name="desc_plugin"><![CDATA[
         <p>Returns last know location or tracks it.</p>
-        <p>Output format: <code>&lt;timestamp&gt;
+        <p>Output format:<br/><code>&lt;timestamp&gt;
         &lt;latitude_deg&gt;,&lt;longitude_deg&gt; &lt;accuracy_m&gt;
         &lt;altitude_m&gt; &lt;accuracy_m&gt; &lt;bearing_deg&gt; &lt;accuracy_deg&gt;
-        &lt;speed_mps&gt; &lt;accuracy_mps&gt; &lt;provider&gt;</code></p>
+        &lt;speed_mps&gt; &lt;accuracy_mps&gt; &lt;provider&gt;</code><br/>or<br/>
+        <code>No data</code> yet.</p>
         <p>Arguments:</p>
         <ul type=\"none\">
-        <li><code>-b</code> &#x2014; use binary format instead as <p><code>
-        struct {<br/>
-        uint32_t len; // size of this structure minus 4<br/>
+        <li><code>-b</code> &#x2014; use binary format (native endianness) instead as<p><code>
+        struct __attribute__((__packed__)) location {<br/>
+        uint32_t length; // size of this structure minus 4<br/>
+        char[4] provider;<br/>
         sint64_t time_stamp; // seconds since the beginning of the epoch<br/>
         double latitude; // degrees<br/>
         double longitude; // degrees<br/>
-        float accuracy; // meters<br/>
         double altitude; // meters<br/>
+        float accuracy; // meters<br/>
         float altitude_accuracy; // meters<br/>
         float bearing; // degrees<br/>
         float bearing_accuracy; // degrees<br/>
         float speed; // meters per second<br/>
         float speed_accuracy; // meters per second<br/>
-        char[4] provider;<br/>
-        };<br/>
-        </code></p></li>
+        };
+        </code></p>or only the <code>length</code> field equals zero if there is no data yet.</li>
         <li><code>-r</code> &#x2014; fancy output.</li>
         <li><code>-t [&lt;minIntervalSeconds&gt; [&lt;minDistanceMeters&gt;]]</code> &#x2014;
-        output position updates continuously and exit on any signal.</li>
+        output location updates continuously and exit on any signal.
+        <p>Defaults:<br/>
+        <code>&lt;minIntervalSeconds&gt;</code> is <code>1.0</code>;<br/>
+        <code>&lt;minDistanceMeters&gt;</code> is <code>1.0</code>.</p></li>
         </ul>
     ]]></string>
 </resources>

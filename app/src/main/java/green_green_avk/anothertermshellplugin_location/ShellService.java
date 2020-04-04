@@ -12,10 +12,11 @@ import android.os.ParcelFileDescriptor;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
@@ -63,33 +64,33 @@ public class ShellService extends BaseShellService {
 
     private static void printLocation(@NonNull final OutputStream output,
                                       @Nullable final Location l,
-                                      @NonNull final OutputFmt outputFmt) {
+                                      @NonNull final OutputFmt outputFmt) throws IOException {
         if (outputFmt == OutputFmt.BINARY) {
-            final DataOutputStream dos = new DataOutputStream(output);
-            try {
-                if (l == null) {
-                    dos.writeInt(0);
-                    return;
-                }
-                dos.writeInt(locationBinRecLen);
-                dos.writeLong(l.getTime());
-                dos.writeDouble(l.getLatitude());
-                dos.writeDouble(l.getLongitude());
-                dos.writeFloat(l.getAccuracy());
-                dos.writeDouble(l.getAltitude());
-                dos.writeFloat(isO ? l.getVerticalAccuracyMeters() : 0F);
-                dos.writeFloat(l.getBearing());
-                dos.writeFloat(isO ? l.getBearingAccuracyDegrees() : 0F);
-                dos.writeFloat(l.getSpeed());
-                dos.writeFloat(isO ? l.getSpeedAccuracyMetersPerSecond() : 0F);
-                String pStr = l.getProvider();
-                if (pStr == null) pStr = "null";
-                dos.write(Arrays.copyOf(Utils.toUTF8(pStr), 4));
-            } catch (final IOException ignored) {
+            final ByteBuffer ob = ByteBuffer.allocate(locationBinRecLen + Integer.SIZE / 8)
+                    .order(ByteOrder.nativeOrder());
+            if (l == null) {
+                ob.putInt(0);
+                output.write(ob.array(), ob.arrayOffset(), ob.arrayOffset() + ob.position());
+                return;
             }
+            ob.putInt(locationBinRecLen);
+            String pStr = l.getProvider();
+            if (pStr == null) pStr = "null";
+            ob.put(Arrays.copyOf(Utils.toUTF8(pStr), 4));
+            ob.putLong(l.getTime());
+            ob.putDouble(l.getLatitude());
+            ob.putDouble(l.getLongitude());
+            ob.putDouble(l.getAltitude());
+            ob.putFloat(l.getAccuracy());
+            ob.putFloat(isO ? l.getVerticalAccuracyMeters() : 0F);
+            ob.putFloat(l.getBearing());
+            ob.putFloat(isO ? l.getBearingAccuracyDegrees() : 0F);
+            ob.putFloat(l.getSpeed());
+            ob.putFloat(isO ? l.getSpeedAccuracyMetersPerSecond() : 0F);
+            output.write(ob.array(), ob.arrayOffset(), ob.arrayOffset() + ob.position());
         } else
-            Utils.write(output, getLocationStr(l,
-                    outputFmt == OutputFmt.FANCY ? locFmtH : locFmt) + "\n");
+            output.write(Utils.toUTF8(getLocationStr(l,
+                    outputFmt == OutputFmt.FANCY ? locFmtH : locFmt) + "\n"));
     }
 
     private static final class ShellLocationListener implements LocationListener {
@@ -106,10 +107,10 @@ public class ShellService extends BaseShellService {
 
         @Override
         public void onLocationChanged(final Location location) {
-            printLocation(stdout, location, outputFmt);
             try {
+                printLocation(stdout, location, outputFmt);
                 stdout.flush();
-            } catch (final IOException ignored) {
+            } catch (final IOException ignored) { // TODO: Better interrupt on this exception.
             }
         }
 
@@ -156,7 +157,8 @@ public class ShellService extends BaseShellService {
                     argsPtr++;
                     try {
                         if (args.length > argsPtr) {
-                            minInterval = Long.parseLong(Utils.fromUTF8(args[argsPtr])) * 1000;
+                            minInterval =
+                                    (long) (Float.parseFloat(Utils.fromUTF8(args[argsPtr])) * 1000);
                             argsPtr++;
                         }
                         if (args.length > argsPtr) {
@@ -211,7 +213,10 @@ public class ShellService extends BaseShellService {
                 Utils.write(stderr, getString(R.string.msg_location_perm_not_granted) + "\n");
                 return 1;
             }
-            printLocation(stdout, location, outputFmt);
+            try {
+                printLocation(stdout, location, outputFmt);
+            } catch (final IOException ignored) {
+            }
         }
         return 0;
     }
