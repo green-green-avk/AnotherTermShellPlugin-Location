@@ -201,7 +201,7 @@ public class ShellService extends BaseShellService {
                     th.join();
                 } catch (final InterruptedException ignored) {
                 }
-                Utils.write(stdout, "\n");
+                Utils.write(stderr, "\n");
             }
         } else {
             final Location location;
