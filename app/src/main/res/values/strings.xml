@@ -7,7 +7,7 @@
         Usage: [-b] [-r] [-t [<minIntervalSeconds> [<minDistanceMeters>]]]
     ]]></string>
     <string name="desc_plugin"><![CDATA[
-        <p>Returns last know location or tracks it.</p>
+        <p>Returns last known location or tracks it.</p>
         <p>Output format:<br/><code>&lt;timestamp&gt;
         &lt;latitude_deg&gt;,&lt;longitude_deg&gt; &lt;accuracy_m&gt;
         &lt;altitude_m&gt; &lt;accuracy_m&gt; &lt;bearing_deg&gt; &lt;accuracy_deg&gt;
