@@ -25,6 +25,7 @@ import green_green_avk.anothertermshellpluginutils.BaseShellService;
 import green_green_avk.anothertermshellpluginutils.ExecutionContext;
 import green_green_avk.anothertermshellpluginutils.Protocol;
 import green_green_avk.anothertermshellpluginutils.Utils;
+import green_green_avk.anothertermshellpluginutils_perms.Permissions;
 
 public class ShellService extends BaseShellService {
 
@@ -131,8 +132,7 @@ public class ShellService extends BaseShellService {
     protected int onExec(@NonNull final ExecutionContext execCtx,
                          @NonNull final byte[][] args, @NonNull final ParcelFileDescriptor[] fds) {
         final OutputStream stderr = new FileOutputStream(fds[2].getFileDescriptor());
-        if (!execCtx.verify(BuildConfig.DEBUG ?
-                BaseShellService.trustedClientsDebug : BaseShellService.trustedClients)) {
+        if (!Permissions.verifyByBinder(this)) {
             Utils.write(stderr, "Access denied: untrusted client\n");
             return 1;
         }
