@@ -1,5 +1,8 @@
 # Another Term Shell Plugin - Location
-Returns last know location or tracks it.
+
+<https://play.google.com/store/apps/details?id=green_green_avk.anothertermshellplugin_location>
+
+Returns last known location or tracks it.
 
 ## Output format
 <pre>&lt;timestamp&gt; &lt;latitude_deg&gt;,&lt;longitude_deg&gt; &lt;accuracy_m&gt; &lt;altitude_m&gt; &lt;accuracy_m&gt; &lt;bearing_deg&gt; &lt;accuracy_deg&gt; &lt;speed_mps&gt; &lt;accuracy_mps&gt; &lt;provider&gt;</pre>
