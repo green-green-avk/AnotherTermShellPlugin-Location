@@ -28,7 +28,7 @@ import green_green_avk.anothertermshellpluginutils.Protocol;
 import green_green_avk.anothertermshellpluginutils.Utils;
 import green_green_avk.anothertermshellpluginutils_perms.Permissions;
 
-public class ShellService extends BaseShellService {
+public final class ShellService extends BaseShellService {
 
     private static final long defMinInterval = 1000; // ms
     private static final float defMinDistance = 1F; // m

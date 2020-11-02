@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">Another Term Shell Plugin - Location</string>
     <string name="msg_bad_argument_s">Bad argument: %s</string>
-    <string name="msg_location_perm_not_granted">Location access permission is not granted.
-    It can be granted in the device settings.</string>
+    <string name="msg_location_perm_not_granted"><![CDATA[
+Location access permission is not granted for the plugin.\
+It can be granted in the device settings.
+    ]]></string>
     <string name="msg_usage"><![CDATA[
         Usage: [-b] [-r] [-t [<minIntervalSeconds> [<minDistanceMeters>]]]
     ]]></string>
