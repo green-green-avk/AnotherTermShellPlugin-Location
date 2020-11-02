@@ -2,9 +2,6 @@ package green_green_avk.anothertermshellplugin;
 
 import android.content.Context;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.HandlerThread;
 import android.os.ParcelFileDescriptor;
@@ -15,17 +12,18 @@ import androidx.annotation.Nullable;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Locale;
 
+import green_green_avk.anothertermshellplugin_location.LocationService;
+import green_green_avk.anothertermshellplugin_location.LocationUtils;
+import green_green_avk.anothertermshellplugin_location.LocationUtils.OutputFmt;
 import green_green_avk.anothertermshellplugin_location.R;
 import green_green_avk.anothertermshellpluginutils.BaseShellService;
 import green_green_avk.anothertermshellpluginutils.ExecutionContext;
+import green_green_avk.anothertermshellpluginutils.OnSignal;
 import green_green_avk.anothertermshellpluginutils.Protocol;
+import green_green_avk.anothertermshellpluginutils.Signal;
 import green_green_avk.anothertermshellpluginutils.Utils;
+import green_green_avk.anothertermshellpluginutils.Waiter;
 import green_green_avk.anothertermshellpluginutils_perms.Permissions;
 
 public final class ShellService extends BaseShellService {
@@ -33,99 +31,81 @@ public final class ShellService extends BaseShellService {
     private static final long defMinInterval = 1000; // ms
     private static final float defMinDistance = 1F; // m
 
-    private enum OutputFmt {DEFAULT, FANCY, BINARY}
-
-    private static final boolean isO = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
-
-    private static final String locFmtH =
-            "%TF,%<TT,%<TZ %.6f,%.6f ±%.1fm %.1fm ±%.1fm %.1f° ±%.1f° %.1fm/s ±%.1fm/s %s";
-    private static final String locFmt =
-            "%Ts %.6f,%.6f %.1f %.1f %.1f %.1f %.1f %.1f %.1f %s";
-
-    private static String getLocationStr(@Nullable final Location l, @NonNull final String fmt) {
-        if (l == null) return "No data";
-        final Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(l.getTime());
-        return String.format(Locale.ROOT, fmt,
-                cal,
-                l.getLatitude(), l.getLongitude(), l.getAccuracy(),
-                l.getAltitude(), isO ? l.getVerticalAccuracyMeters() : 0F,
-                l.getBearing(), isO ? l.getBearingAccuracyDegrees() : 0F,
-                l.getSpeed(), isO ? l.getSpeedAccuracyMetersPerSecond() : 0F,
-                l.getProvider());
-    }
-
-    private static final int locationBinRecLen = (
-            Long.SIZE +
-                    Double.SIZE * 2 + Float.SIZE +
-                    Double.SIZE + Float.SIZE +
-                    Float.SIZE * 2 +
-                    Float.SIZE * 2 +
-                    32
-    ) / 8;
-
-    private static void printLocation(@NonNull final OutputStream output,
-                                      @Nullable final Location l,
-                                      @NonNull final OutputFmt outputFmt) throws IOException {
-        if (outputFmt == OutputFmt.BINARY) {
-            final ByteBuffer ob = ByteBuffer.allocate(locationBinRecLen + Integer.SIZE / 8)
-                    .order(ByteOrder.nativeOrder());
-            if (l == null) {
-                ob.putInt(0);
-                output.write(ob.array(), ob.arrayOffset(), ob.arrayOffset() + ob.position());
-                return;
-            }
-            ob.putInt(locationBinRecLen);
-            String pStr = l.getProvider();
-            if (pStr == null) pStr = "null";
-            ob.put(Arrays.copyOf(Utils.toUTF8(pStr), 4));
-            ob.putLong(l.getTime());
-            ob.putDouble(l.getLatitude());
-            ob.putDouble(l.getLongitude());
-            ob.putDouble(l.getAltitude());
-            ob.putFloat(l.getAccuracy());
-            ob.putFloat(isO ? l.getVerticalAccuracyMeters() : 0F);
-            ob.putFloat(l.getBearing());
-            ob.putFloat(isO ? l.getBearingAccuracyDegrees() : 0F);
-            ob.putFloat(l.getSpeed());
-            ob.putFloat(isO ? l.getSpeedAccuracyMetersPerSecond() : 0F);
-            output.write(ob.array(), ob.arrayOffset(), ob.arrayOffset() + ob.position());
-        } else
-            output.write(Utils.toUTF8(getLocationStr(l,
-                    outputFmt == OutputFmt.FANCY ? locFmtH : locFmt) + "\n"));
-    }
-
-    private static final class ShellLocationListener implements LocationListener {
+    private static final class ShellLocationListener implements LocationService.OnLocation, OnSignal {
+        @NonNull
+        private final Context appCtx;
+        @NonNull
+        private final OutputStream stderr;
         @NonNull
         private final OutputStream stdout;
         @NonNull
         private final OutputFmt outputFmt;
 
-        private ShellLocationListener(@NonNull final OutputStream stdout,
+        public final Waiter<Integer> result = new Waiter<>();
+
+        private ShellLocationListener(@NonNull final Context ctx,
+                                      @NonNull final OutputStream stderr,
+                                      @NonNull final OutputStream stdout,
                                       @NonNull final OutputFmt outputFmt) {
+            this.appCtx = ctx.getApplicationContext();
+            this.stderr = stderr;
             this.stdout = stdout;
             this.outputFmt = outputFmt;
         }
 
         @Override
-        public void onLocationChanged(final Location location) {
+        public void onLocationChanged(@Nullable final Location location) {
             try {
-                printLocation(stdout, location, outputFmt);
+                LocationUtils.printLocation(stdout, location, outputFmt);
                 stdout.flush();
-            } catch (final IOException ignored) { // TODO: Better interrupt on this exception.
+            } catch (final IOException ignored) {
+                result.set(3);
             }
         }
 
         @Override
-        public void onStatusChanged(final String provider, final int status, final Bundle extras) {
+        public void onEnabled() {
+            try {
+                Utils.write(stdout, appCtx.getString(R.string.msg_enabled) + "\n");
+                stdout.flush();
+            } catch (final IOException ignored) {
+                result.set(3);
+            }
         }
 
         @Override
-        public void onProviderEnabled(final String provider) {
+        public void onDisabled() {
+            try {
+                Utils.write(stdout, appCtx.getString(R.string.msg_disabled) + "\n");
+                stdout.flush();
+            } catch (final IOException ignored) {
+                result.set(3);
+            }
         }
 
         @Override
-        public void onProviderDisabled(final String provider) {
+        public void onException(@NonNull final Exception e) {
+            int r = 3;
+            try {
+                if (e instanceof IllegalArgumentException) {
+                    r = 1;
+                    Utils.write(stderr, appCtx.getString(R.string.msg_usage) + "\n" +
+                            appCtx.getString(R.string.msg_bad_argument_s, e.getMessage()) + "\n");
+                } else if (e instanceof SecurityException) {
+                    r = 2;
+                    Utils.write(stderr, e.getMessage() + "\n");
+                } else {
+                    Utils.write(stderr, "Oops: " + e.getMessage() + "\n");
+                }
+                stdout.flush();
+            } catch (final IOException ignored) {
+            }
+            result.set(r);
+        }
+
+        @Override
+        public void onSignal(@NonNull final Signal signal) {
+            result.set(0);
         }
     }
 
@@ -178,29 +158,23 @@ public final class ShellService extends BaseShellService {
             }
             final OutputStream stdout = new FileOutputStream(fds[1].getFileDescriptor());
             try {
-                final LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
                 if (track) {
-                    final LocationListener ll = new ShellLocationListener(stdout, outputFmt);
+                    final ShellLocationListener ll =
+                            new ShellLocationListener(this, stderr, stdout, outputFmt);
                     final HandlerThread th = new HandlerThread("");
                     th.setDaemon(true);
                     th.start();
+                    if (!LocationService.isRunning()) {
+                        ll.onDisabled();
+                    }
+                    final LocationService.OnStateChangedClient sl =
+                            LocationService.notifyLocation(this, minInterval, minDistance, ll, th.getLooper());
                     try {
-                        try {
-                            lm.requestLocationUpdates(
-                                    LocationManager.GPS_PROVIDER, minInterval, minDistance,
-                                    ll, th.getLooper());
-                        } catch (final IllegalArgumentException e) {
-                            Utils.write(stderr, getString(R.string.msg_usage) + "\n");
-                            Utils.write(stderr, getString(R.string.msg_bad_argument_s, e.getMessage()) + "\n");
-                            return 1;
-                        } catch (final SecurityException e) {
-                            Utils.write(stderr, getString(R.string.msg_location_perm_not_granted) + "\n");
-                            return 2;
-                        }
-                        execCtx.readSignal();
-                    } catch (final IOException ignored) {
+                        Utils.bindSignal(execCtx, ll, th.getLooper());
+                        return ll.result.get();
+                    } catch (final InterruptedException ignored) {
                     } finally {
-                        lm.removeUpdates(ll);
+                        LocationService.removeStateNotification(sl);
                         th.quit();
                         try {
                             th.join();
@@ -211,13 +185,13 @@ public final class ShellService extends BaseShellService {
                 } else {
                     final Location location;
                     try {
-                        location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                        location = LocationService.getLocation(this);
                     } catch (final SecurityException e) {
-                        Utils.write(stderr, getString(R.string.msg_location_perm_not_granted) + "\n");
-                        return 1;
+                        Utils.write(stderr, e.getMessage() + "\n");
+                        return 2;
                     }
                     try {
-                        printLocation(stdout, location, outputFmt);
+                        LocationUtils.printLocation(stdout, location, outputFmt);
                     } catch (final IOException ignored) {
                     }
                 }

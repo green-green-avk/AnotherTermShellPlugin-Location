@@ -34,3 +34,7 @@ output location updates continuously and exit on any signal.
 <code>&lt;minIntervalSeconds&gt;</code> is <code>1.0</code>;<br/>
 <code>&lt;minDistanceMeters&gt;</code> is <code>1.0</code>.</p></li>
 </ul>
+
+## Note
+**Note:** It is supposed to explicitly start the location plugin when it is required.
+The <kbd>Start/Pause</kbd> button resides under the plugin launcher icon.

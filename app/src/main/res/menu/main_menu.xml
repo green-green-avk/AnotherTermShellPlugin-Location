@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/start_stop"
+        android:actionLayout="@layout/start_stop_content"
+        android:showAsAction="always"
+        android:title="@string/label_start_pause" />
+</menu>

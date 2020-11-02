@@ -40,5 +40,11 @@ It can be granted in the device settings.
         <code>&lt;minIntervalSeconds&gt;</code> is <code>1.0</code>;<br/>
         <code>&lt;minDistanceMeters&gt;</code> is <code>1.0</code>.</p></li>
         </ul>
+        <p><b>Note:</b> It is supposed to explicitly start the location plugin when it is required.
+        The <kbd>Start/Pause</kbd> button resides under the plugin launcher icon.</p>
     ]]></string>
+    <string name="label_start_pause">Start/Pause</string>
+    <string name="stat_loc">Location plugin is active</string>
+    <string name="msg_enabled">Location data access resumed</string>
+    <string name="msg_disabled">Location data access paused: Please, start manually from the plugin settings under its launcher icon</string>
 </resources>

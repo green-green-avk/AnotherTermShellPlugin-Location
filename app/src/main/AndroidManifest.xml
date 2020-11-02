@@ -4,6 +4,7 @@
     package="green_green_avk.anothertermshellplugin_location">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="false"
@@ -21,12 +22,21 @@
             android:name="green_green_avk.anothertermshellpluginutils_perms.PermissionRequestReceiver"
             tools:node="remove" />
 
-        <activity android:name="green_green_avk.anothertermshellpluginutils_perms.DefaultSettingsActivity">
+        <activity
+            android:name="green_green_avk.anothertermshellpluginutils_perms.DefaultSettingsActivity"
+            tools:node="remove" />
+
+        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".LocationService"
+            android:enabled="true"
+            android:exported="false" />
 
     </application>
 
