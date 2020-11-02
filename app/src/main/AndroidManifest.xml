@@ -12,10 +12,14 @@
         android:supportsRtl="true">
 
         <service
-            android:name=".ShellService"
+            android:name="green_green_avk.anothertermshellplugin.ShellService"
             android:enabled="true"
             android:exported="true"
             tools:ignore="ExportedService" />
+
+        <receiver
+            android:name="green_green_avk.anothertermshellpluginutils_perms.PermissionRequestReceiver"
+            tools:node="remove" />
 
         <activity android:name="green_green_avk.anothertermshellpluginutils_perms.DefaultSettingsActivity">
             <intent-filter>

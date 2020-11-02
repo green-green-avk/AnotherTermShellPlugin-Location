@@ -1,4 +1,4 @@
-package green_green_avk.anothertermshellplugin_location;
+package green_green_avk.anothertermshellplugin;
 
 import android.content.Context;
 import android.location.Location;
@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 
+import green_green_avk.anothertermshellplugin_location.R;
 import green_green_avk.anothertermshellpluginutils.BaseShellService;
 import green_green_avk.anothertermshellpluginutils.ExecutionContext;
 import green_green_avk.anothertermshellpluginutils.Protocol;
