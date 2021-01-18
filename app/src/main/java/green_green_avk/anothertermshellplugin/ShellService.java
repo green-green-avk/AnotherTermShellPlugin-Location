@@ -133,93 +133,107 @@ public final class ShellService extends BaseShellService {
     protected int onExec(@NonNull final ExecutionContext execCtx,
                          @NonNull final byte[][] args, @NonNull final ParcelFileDescriptor[] fds) {
         final OutputStream stderr = new FileOutputStream(fds[2].getFileDescriptor());
-        if (!Permissions.verifyByBinder(this)) {
-            Utils.write(stderr, "Access denied: untrusted client\n");
-            return 1;
-        }
-        @NonNull OutputFmt outputFmt = OutputFmt.DEFAULT;
-        boolean track = false;
-        long minInterval = defMinInterval;
-        float minDistance = defMinDistance;
-        int argsPtr = 0;
-        while (args.length > argsPtr) {
-            final String arg = Utils.fromUTF8(args[argsPtr]);
-            switch (arg) {
-                case "-b":
-                    outputFmt = OutputFmt.BINARY;
-                    argsPtr++;
-                    break;
-                case "-r":
-                    outputFmt = OutputFmt.FANCY;
-                    argsPtr++;
-                    break;
-                case "-t":
-                    track = true;
-                    argsPtr++;
-                    try {
-                        if (args.length > argsPtr) {
-                            minInterval =
-                                    (long) (Float.parseFloat(Utils.fromUTF8(args[argsPtr])) * 1000);
-                            argsPtr++;
-                        }
-                        if (args.length > argsPtr) {
-                            minDistance = Float.parseFloat(Utils.fromUTF8(args[argsPtr]));
-                            argsPtr++;
-                        }
-                    } catch (final NumberFormatException ignored) {
-                    }
-                    break;
-                default:
-                    Utils.write(stderr, getString(R.string.msg_usage) + "\n");
-                    Utils.write(stderr, getString(R.string.msg_bad_argument_s, arg) + "\n");
-                    return 1;
-            }
-        }
-        final OutputStream stdout = new FileOutputStream(fds[1].getFileDescriptor());
-        final LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (track) {
-            final LocationListener ll = new ShellLocationListener(stdout, outputFmt);
-            final HandlerThread th = new HandlerThread("");
-            th.setDaemon(true);
-            th.start();
-            try {
-                try {
-                    lm.requestLocationUpdates(
-                            LocationManager.GPS_PROVIDER, minInterval, minDistance,
-                            ll, th.getLooper());
-                } catch (final IllegalArgumentException e) {
-                    Utils.write(stderr, getString(R.string.msg_usage) + "\n");
-                    Utils.write(stderr, getString(R.string.msg_bad_argument_s, e.getMessage()) + "\n");
-                    return 1;
-                } catch (final SecurityException e) {
-                    Utils.write(stderr, getString(R.string.msg_location_perm_not_granted) + "\n");
-                    return 2;
-                }
-                execCtx.readSignal();
-            } catch (final IOException ignored) {
-            } finally {
-                lm.removeUpdates(ll);
-                th.quit();
-                try {
-                    th.join();
-                } catch (final InterruptedException ignored) {
-                }
-                Utils.write(stderr, "\n");
-            }
-        } else {
-            final Location location;
-            try {
-                location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            } catch (final SecurityException e) {
-                Utils.write(stderr, getString(R.string.msg_location_perm_not_granted) + "\n");
+        try {
+            if (!Permissions.verifyByBinder(this)) {
+                Utils.write(stderr, "Access denied: untrusted client\n");
                 return 1;
             }
+            @NonNull OutputFmt outputFmt = OutputFmt.DEFAULT;
+            boolean track = false;
+            long minInterval = defMinInterval;
+            float minDistance = defMinDistance;
+            int argsPtr = 0;
+            while (args.length > argsPtr) {
+                final String arg = Utils.fromUTF8(args[argsPtr]);
+                switch (arg) {
+                    case "-b":
+                        outputFmt = OutputFmt.BINARY;
+                        argsPtr++;
+                        break;
+                    case "-r":
+                        outputFmt = OutputFmt.FANCY;
+                        argsPtr++;
+                        break;
+                    case "-t":
+                        track = true;
+                        argsPtr++;
+                        try {
+                            if (args.length > argsPtr) {
+                                minInterval =
+                                        (long) (Float.parseFloat(Utils.fromUTF8(args[argsPtr])) * 1000);
+                                argsPtr++;
+                            }
+                            if (args.length > argsPtr) {
+                                minDistance = Float.parseFloat(Utils.fromUTF8(args[argsPtr]));
+                                argsPtr++;
+                            }
+                        } catch (final NumberFormatException ignored) {
+                        }
+                        break;
+                    default:
+                        Utils.write(stderr, getString(R.string.msg_usage) + "\n");
+                        Utils.write(stderr, getString(R.string.msg_bad_argument_s, arg) + "\n");
+                        return 1;
+                }
+            }
+            final OutputStream stdout = new FileOutputStream(fds[1].getFileDescriptor());
             try {
-                printLocation(stdout, location, outputFmt);
+                final LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                if (track) {
+                    final LocationListener ll = new ShellLocationListener(stdout, outputFmt);
+                    final HandlerThread th = new HandlerThread("");
+                    th.setDaemon(true);
+                    th.start();
+                    try {
+                        try {
+                            lm.requestLocationUpdates(
+                                    LocationManager.GPS_PROVIDER, minInterval, minDistance,
+                                    ll, th.getLooper());
+                        } catch (final IllegalArgumentException e) {
+                            Utils.write(stderr, getString(R.string.msg_usage) + "\n");
+                            Utils.write(stderr, getString(R.string.msg_bad_argument_s, e.getMessage()) + "\n");
+                            return 1;
+                        } catch (final SecurityException e) {
+                            Utils.write(stderr, getString(R.string.msg_location_perm_not_granted) + "\n");
+                            return 2;
+                        }
+                        execCtx.readSignal();
+                    } catch (final IOException ignored) {
+                    } finally {
+                        lm.removeUpdates(ll);
+                        th.quit();
+                        try {
+                            th.join();
+                        } catch (final InterruptedException ignored) {
+                        }
+                        Utils.write(stderr, "\n");
+                    }
+                } else {
+                    final Location location;
+                    try {
+                        location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    } catch (final SecurityException e) {
+                        Utils.write(stderr, getString(R.string.msg_location_perm_not_granted) + "\n");
+                        return 1;
+                    }
+                    try {
+                        printLocation(stdout, location, outputFmt);
+                    } catch (final IOException ignored) {
+                    }
+                }
+                return 0;
+            } finally {
+                try {
+                    stdout.close();
+                } catch (final IOException ignored) {
+                }
+            }
+        } finally {
+            try {
+                stderr.close();
             } catch (final IOException ignored) {
             }
         }
-        return 0;
     }
 
     @Override
