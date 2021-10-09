@@ -6,7 +6,7 @@ Location access permission is not granted for the plugin.\
 It can be granted in the device settings.
     ]]></string>
     <string name="msg_usage"><![CDATA[
-        Usage: [-b] [-r] [-t [<minIntervalSeconds> [<minDistanceMeters>]]]
+        Arguments: [-b] [-r] [-t [<minIntervalSeconds> [<minDistanceMeters>]]]
     ]]></string>
     <string name="desc_plugin"><![CDATA[
         <p>Returns last known location or tracks it.</p>
